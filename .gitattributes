@@ -1,0 +1,16 @@
+* text=auto eol=lf
+*.ps1  text eol=crlf
+*.bat  text eol=crlf
+*.sh   text eol=lf
+
+*.stl        binary
+*.step       binary
+*.stp        binary
+*.dxf        binary
+*.tflite     binary
+*.jpg        binary
+*.png        binary
+*.pdf        binary
+
+*.kicad_sch  text merge=binary
+*.kicad_pcb  text merge=binary
