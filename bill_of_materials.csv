@@ -1,0 +1,35 @@
+Item,Description,Qty,Unit Price USD,Total USD,Item link,Why I need it,Supplier,Status,Notes
+ALREADY OWN,no cost. these are on hand,,,,,,,,
+MG996R servo,Metal gear servo. 55g. 25T spline. measured 39.9 x 19.7 x 42.9mm,1,0.00,0.00,N/A,The only actuator in the build. Tilts the pan so the item slides one way or the other,N/A,OWNED,Measured mine with calipers. Body is 39.9mm not the spec 40.7 and the shaft sits 10.95mm off centre. The CAD is built to my unit
+Metal servo horn 20mm round,Couples the servo spline to the printed pan hub,1,0.00,0.00,N/A,A 25T spline has 0.74mm teeth which no FDM printer can resolve. The horn is the only thing that can grip the shaft,N/A,OWNED,Ships in the bag with the MG996R
+,SUBTOTAL,,,0.00,,,,,
+,,,,,,,,,
+PARTS I STILL NEED,the funding request,,,,,,,,
+Raspberry Pi Zero 2 W,Deployment compute board. 512MB RAM,1,TBD,TBD,TBD,Runs everything - trigger capture classify actuate and log. Idles at 0.4W against the 4B's 2.7W which matters because the Pi can never sleep between items,Raspberry Pi,TO BUY,The one I measured pin 1 on is borrowed from a friend. I need my own for a permanent build
+SmartBin HAT PCB,Custom Pi Zero HAT. 2 layer. 65 x 45mm. 1.6mm FR4,1,TBD,TBD,TBD,Everything between the Pi and the mechanism lives on this board. The load cell amp the ADC and the MOSFET are all on it,JLCPCB,TO BUY,Gerbers are exported and DRC clean. TBD until JLCPCB quotes it. A 2 layer board this size is usually a few dollars for five plus shipping
+HX711,24-bit bridge ADC for the load cell. SOP-16,1,TBD,TBD,TBD,Reads the load cell. A bare strain gauge puts out microvolts which nothing else in the build can see,LCSC,TO BUY,Runs at 3.3V not 5V so both its signals are directly Pi-safe. That deletes 4 level shifting parts
+MCP3208,12-bit SPI ADC. SOIC-16,1,TBD,TBD,TBD,The Pi has no analog input at all. Without this the battery voltage simply cannot be read,LCSC,TO BUY,MCP3008 is pin compatible if 10-bit is good enough
+BC847,NPN pass transistor for the HX711 AVDD regulator. SOT-23,1,TBD,TBD,TBD,Generates the analog supply that excites the load cell bridge,LCSC,TO BUY,SOT-23 pinout is base-emitter-collector not BCE. Getting this backwards ships a dead board
+AO3400A,Logic-level N-channel MOSFET. SOT-23,1,TBD,TBD,TBD,Switches the LED ring. A Pi GPIO cannot drive an LED ring directly,LCSC,TO BUY,Any logic-level N-FET rated 2A or more works
+0805 resistor pack,Assorted 1% 0805 resistors,1,TBD,TBD,TBD,Ten resistors across the whole board - dividers current limits pullups and the star ground link,LCSC,TO BUY,"Values needed: 12k, 11k, 100k x2, 22k, 220R, 100R, 10k, 150R, 0R. The 0R is 1206 not 0805"
+100nF 0805 ceramic,Decoupling and filtering,6,TBD,TBD,TBD,Every IC needs local decoupling or it browns out on its own switching noise,LCSC,TO BUY,C1 C2 C3 C5 C6 C8
+10uF 0805 ceramic,AVDD bulk. excitation supply for the load cell,1,TBD,TBD,TBD,Holds the analog supply steady while the bridge draws current,LCSC,TO BUY,C4
+470uF 16V electrolytic,Bulk capacitance at the servo connector. radial 8mm,1,TBD,TBD,TBD,A servo current spike becomes a brownout without local bulk,LCSC,TO BUY,Mount at the connector NOT at the regulator. The trace between them is what turns a spike into a brownout
+2x20 female header 2.54mm,Connects the HAT to the Pi,1,TBD,TBD,TBD,The only mechanical and electrical link between the HAT and the Pi,Amazon,TO BUY,Header position verified against the official Pi Zero 2 W drawing. Pin 1 row confirmed on a physical board
+2.54mm pin headers assorted,1x02 x4 / 1x03 x2 / 1x04 x1,1,TBD,TBD,TBD,Every off-board thing plugs in here - load cell servo LED ring break-beam and battery tap,Amazon,TO BUY,Seven connectors total. A strip of breakable header covers all of them
+Raspberry Pi Camera Module 3,Top-down camera. 25 x 24mm PCB,1,TBD,TBD,TBD,Takes the photo the classifier runs on. Nothing sorts without it,Raspberry Pi,TO BUY,Mount is not modelled in CAD yet
+microSD card 32GB,Pi boot media,1,TBD,TBD,TBD,The Pi has no onboard storage,Amazon,TO BUY,
+5kg bar load cell,Weighs the item on the pan. 80 x 12.7 x 12.7mm,1,TBD,TBD,TBD,Weight tells you things a photo cannot - a full drink against an empty can look identical to a camera,Amazon,TO BUY,Check the hole pitch against the printed block before ordering
+White LED ring 60mm,Capture illumination. 60mm outer / 44mm inner,1,TBD,TBD,TBD,Consistent lighting so every photo the classifier sees looks the same. Ambient light in a bin varies wildly,Amazon,TO BUY,Retainer is not modelled in CAD yet
+IR break-beam sensor pair,Detects an item entering the throat. 5mm barrel,1,TBD,TBD,TBD,The trigger for the whole sequence. Without it the Pi has no idea something arrived,Adafruit 2168 or similar,TO BUY,
+608ZZ bearing,Pan pivot on the idler side. 22 OD x 8 ID x 7 W,1,TBD,TBD,TBD,Carries the free end of the pan. Without it the pan hangs off the servo shaft alone and the gearbox takes the load,Amazon,TO BUY,Standard skateboard bearing. The bearing block bore is cut for exactly this
+5V 3A power supply,Powers the Pi,1,TBD,TBD,TBD,The Pi never sleeps so this runs continuously,Amazon,TO BUY,
+5-6V buck converter,Separate servo rail supply,1,TBD,TBD,TBD,The servo gets its own supply. Sharing a regulator with the Pi means a stalling servo browns out the Pi and corrupts the SD card,Amazon,TO BUY,Must NOT share a regulator with the Pi. The two grounds meet at exactly one 0R link on the board
+PETG filament 1kg spool,All seven printed parts including the base plate,1,TBD,TBD,TBD,Every structural part of the mechanism is printed. PETG because it is stiffer and less brittle than PLA,Amazon,TO BUY,About 370g used - 230g for the mechanism plus 140g for the base plate. One spool covers it with plenty spare
+M3 x 12mm screws and nuts,Idler flange to pan and pi mount to base plate,4,TBD,TBD,TBD,Holds the idler onto the pan and the Pi mount onto the plate,Hardware,TO BUY,
+M4 x 16mm screws and nuts,Servo mount and bearing block to base plate,4,TBD,TBD,TBD,These take the servo reaction torque. Everything else on the plate is along for the ride,Hardware,TO BUY,
+M2.5 x 8mm screws,Pi and HAT to the pi mount standoffs,4,TBD,TBD,TBD,Mounts the Pi to the printed standoffs,Hardware,TO BUY,58 x 23mm Pi Zero hole pattern. Standoff bosses are 6mm
+M2.5 x 10mm standoffs and screws,Mounts the HAT onto the Pi,4,TBD,TBD,TBD,Keeps the HAT off the Pi so nothing on either board shorts against the other,Hardware,TO BUY,58 x 23mm hole pattern
+,SUBTOTAL,,,TBD,,,,,
+,,,,,,,,,
+TOTAL COST,,,,TBD,,,,TO BUY,Sum of every TO BUY line. Prices and links still need filling in
