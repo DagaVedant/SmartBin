@@ -122,7 +122,3 @@ three dependencies: tensorflow, numpy, pillow.
 | classifier | not trained. no dataset collected |
 
 every number above comes from kicad's drc and erc, and from interference and swept-collision checks on the cad.
-
-## known unknown
-
-the pan tilt angle is 45 deg because that was the starting guess. nobody has confirmed that a wet or crumpled piece of paper actually slides off printed petg at that angle, and every part downstream of the pan depends on it. that is the first thing to test.
