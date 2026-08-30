@@ -1,0 +1,29 @@
+{
+  "confidence_threshold": 0.85,
+  "wet_paper_grams": 40,
+  "settle_seconds": 0.6,
+  "tilt_angle_deg": 45,
+  "tilt_hold_seconds": 1.2,
+  "model": "smartbin-int8.tflite",
+  "database": "events.db",
+  "api_port": 8080,
+  "pins": {
+    "beam": 17,
+    "servo": 12,
+    "led": 13,
+    "hx711_data": 5,
+    "hx711_clock": 6
+  },
+  "load_cell": {
+    "offset": 0,
+    "scale": 1.0
+  },
+  "rules": {
+    "pet_bottle": "recycle",
+    "metal_can": "recycle",
+    "paper_clean": "recycle",
+    "organics": "trash",
+    "soiled": "trash",
+    "unknown": "trash"
+  }
+}

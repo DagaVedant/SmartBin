@@ -1,0 +1,4 @@
+gpiozero>=2.0
+picamera2>=0.3
+tflite-runtime>=2.14
+numpy>=1.26
