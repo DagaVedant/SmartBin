@@ -1,7 +1,6 @@
 /firmware/
 /ml/
 /production/
-bill_of_materials.csv
 README.md
 
 __pycache__/
