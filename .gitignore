@@ -1,7 +1,4 @@
-/firmware/
-/ml/
 /production/
-README.md
 
 __pycache__/
 *.py[cod]
