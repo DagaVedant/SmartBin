@@ -1,12 +1,13 @@
 [Unit]
-Description=SmartBin sorting loop
-After=network.target
+Description=SmartBin sorting service
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-Type=simple
-User=pi
-WorkingDirectory=/home/pi/smartbin/firmware
-ExecStart=/usr/bin/python3 /home/pi/smartbin/firmware/main.py --config /home/pi/smartbin/firmware/config.json
+# Root is needed for /sys/class/pwm (hardware PWM servo)
+User=root
+WorkingDirectory=/home/vedant/SmartBin/firmware
+ExecStart=/home/vedant/SmartBin/.venv/bin/python -m smartbin
 Restart=on-failure
 RestartSec=5
 

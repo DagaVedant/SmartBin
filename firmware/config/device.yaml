@@ -1,0 +1,32 @@
+# Set hardware to "fake" to run the whole pipeline on a laptop.
+hardware: real
+jurisdiction: jurisdiction.yaml
+model: ../models/smartbin.npz
+
+pins:
+  load_cell_data: 5
+  load_cell_clock: 6
+  servo: 12          # fixed by dtoverlay=pwm,pin=12,func=4
+
+pan:
+  tilt_angle_deg: 30
+  settle_ms: 400
+  jam_retries: 2
+  jam_residual_g: 5
+
+trigger:
+  threshold_g: 8
+  settle_tolerance_g: 2
+
+# written by `python3 -m smartbin.calibrate servo|scale`
+calibration:
+  servo: servo_cal.json
+  scale: scale_cal.json
+
+storage:
+  database: ../data/events.db
+  captures: ../data/captures
+
+api:
+  host: 0.0.0.0
+  port: 8000

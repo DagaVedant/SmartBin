@@ -1,4 +1,6 @@
-/production/
+ml/cache/
+firmware/config/*_cal.json
+!firmware/models/
 
 __pycache__/
 *.py[cod]
