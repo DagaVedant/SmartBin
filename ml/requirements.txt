@@ -1,3 +1,6 @@
-tensorflow>=2.16
-numpy>=1.26
-pillow>=10.0
+# training machine only, not the Pi
+torch
+keras
+numpy
+pandas
+pillow
