@@ -105,11 +105,11 @@ results on the held-out splits (accuracy):
 
 | split | teacher (mobilenetv3large) | student (this repo) |
 |---|---|---|
-| val | 92.2% | 67.9% |
-| test, same sources | 91.5% | 65.3% |
-| external test, new sources | 65.4% | 50.8% |
+| val | 92.2% | 71.3% |
+| test, same sources | 91.5% | 69.4% |
+| external test, new sources | 65.4% | 51.9% |
 
-the student is 241k parameters at 128 px, about 0.9 mb, and runs in 6 to 23 ms per image in numpy on a laptop (`ml/verify_export.py`). i have not timed it on the zero w yet. it is a lot weaker than the teacher, so the weight fusion and the low-confidence-goes-to-trash rule do real work. a longer run or a wider student would close some of the gap.
+the student is 420k parameters at 128 px, about 1.5 mb, and runs in 7 to 12 ms per image in numpy on a laptop (`ml/verify_export.py`). i have not timed it on the zero w yet. it is a lot weaker than the teacher, so the weight fusion and the low-confidence-goes-to-trash rule do real work. training it longer or making it wider closed some of the gap, but not all of it.
 
 ## running it on the pi
 
