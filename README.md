@@ -4,11 +4,17 @@ a sorting head that drops into a normal trash can and puts recyclables in the ri
 
 [![View PCB on KiCanvas](https://hack.club/pcb-badge)](https://kicanvas.org/?repo=https://github.com/DagaVedant/SmartBin/tree/main/PCB)
 
-![board](images/board-top.png)
+demo video: https://www.youtube.com/shorts/8E3T3RMJy3o
+
+demo video: https://www.youtube.com/shorts/8E3T3RMJy3o
+
+![the pan on its mount, holding an item](images/build-pan.png)
+
+![pi zero w, hat, camera and servo](images/build-electronics.png)
 
 ## what it does
 
-you throw something in. an ir beam notices, the item lands on a tilting pan, a load cell weighs it, an led ring lights it and a camera photographs it. a small neural net on a pi decides what it is, a servo tilts the pan, and the item slides into either the trash side or the recycling side.
+you drop something on the pan. the load cell feels the weight change, the camera photographs the item, and a small neural net running on a pi zero w decides what it is. a servo tilts the pan and the item slides into the recycling side or the trash side. if the net is not sure, it goes to trash.
 
 ## why
 
@@ -20,57 +26,140 @@ you throw something in. an ir beam notices, the item lands on a tilting pan, a l
 ## how it works
 
 ```
-item dropped
-   -> ir break-beam triggers
-   -> item settles on the pan, load cell reads weight
-   -> led ring on, camera captures, led off
-   -> classifier returns one of six categories plus a confidence
-   -> weight adjusts the result
-   -> county rules map the category to a bin
+item lands on the pan
+   -> load cell reading rises above the threshold and settles
+   -> camera captures a frame
+   -> numpy cnn returns one of 7 classes plus a confidence
+   -> the weight nudges the result (a 600 g "paper" is unlikely)
+   -> jurisdiction file maps the class to recycle or trash
    -> below the confidence threshold it goes to trash
-   -> servo tilts, item slides, pan returns level
-   -> event written to sqlite, served as json
+   -> "no_object" means a false trigger, so the pan stays level
+   -> servo tilts, item slides, pan returns level, scale re-zeroes
+   -> event written to sqlite, served as json by a small api
 ```
+
+| class | bin |
+|---|---|
+| rigid_plastic, metal, glass, cardboard_paper | recycle |
+| soft_plastic_foam, ewaste_hazard, no_object | trash |
+
+the mapping lives in `firmware/config/jurisdiction.yaml`, so a different county's rules are a config change.
+
+## hardware
+
+| part | notes |
+|---|---|
+| raspberry pi zero w | armv6, 512 mb, no accelerator |
+| camera module 3 | imx708, autofocus |
+| mg90s servo | gpio12, hardware pwm |
+| hx711 + 5 kg bar load cell | data gpio5, clock gpio6 |
+| custom hat pcb | in `PCB/` |
+
+the full parts list with prices is `BOM.csv`.
 
 ## the board
 
-65 × 45 mm, 2 layers, 34 components, pi zero hat footprint. mounting holes on the 58 × 23 pattern; the extra 15 mm overhangs the pi.
+65 x 45 mm, 2 layers, pi zero hat footprint. fully routed, ground plane poured, drc clean.
+
+![board](images/board-top.png)
 
 | block | parts |
 |---|---|
 | load cell front end | hx711, pass transistor, feedback divider, 4 caps |
 | battery sense | mcp3208 12-bit spi adc, divider, filter |
 | servo rail | isolated supply, 470 uf bulk, star ground through one 0r link |
-| led ring | logic-level mosfet low-side switch |
-| break-beam | receiver pull-up, emitter current limit |
+| led ring and break-beam | footprints are on the board but not used in the current build |
 
-- **hx711 runs at 3.3 v, not 5 v.** at 5 v its logic threshold is 3.5 v and a 3.3 v gpio can't reliably hit that. running it at 3.3 v deletes 4 level-shifting parts
-- **the two grounds meet at exactly one point.** a stalling servo sharing a return browns out the pi and corrupts the sd card, and it looks exactly like a software bug for hours
-- **servo on gpio12, led on gpio13.** deliberately different pwm channels -- gpio12 and gpio18 are both pwm0, so the obvious pairing would've put two things needing independent duty cycles on one timer
+- the hx711 runs at 3.3 v, not 5 v, so the gpio can read it without level shifting
+- the two grounds meet at exactly one point, so a stalling servo cannot brown out the pi
+- the servo is on gpio12 because that pin is a hardware pwm channel
 
-fully routed, ground plane poured, **drc clean -- 0 violations, 0 unconnected.** gerbers in `PCB/gerber_drl_files/`.
+source files are in `PCB/`: `.kicad_pro`, `.kicad_sch`, `.kicad_pcb`, `schematic.pdf`, and `gerbers.zip`.
 
 ## the mechanics
 
 ![assembly](images/assembly.png)
 
+all cad is in `CAD/`. `smartbin-head.step` is the full assembly; the parts below are the editable cadquery sources, each with `.py`, `.step` and `.stl`.
+
 | part | job |
 |---|---|
-| `base-plate` | 330 × 100 × 6 mm datum everything bolts to |
 | `pan` | the tilting tray the item lands on |
-| `pan-hub` | driven side, couples to the servo horn |
-| `pan-idler` | free side, rides in the 608zz |
-| `servo-mount` | mg996r drops into a captive pocket, shaft on the pivot axis |
+| `pan-hub` | driven side, clamps onto the servo horn |
+| `servo-mount` | flat plate the mg90s pushes through, shaft on the pivot axis |
 | `bearing-block` | carries the 608zz on the idler side |
-| `pi-mount` | pi on 6 mm standoffs, 58 × 23 pattern |
+| `print-plate` | the mount, hub and block laid out for one print |
+
+`base-plate`, `pan-idler` and `pi-mount` are step-only. `bearing-fit-test` and `bearing-608*` are for checking the bearing fit.
 
 ## the classifier
 
-six classes: pet bottle, metal can, clean paper, organics, soiled, unknown. mobilenetv2 with a frozen backbone, exported as int8 tflite because a zero 2 w has 512 mb and no accelerator.
+the pi zero w has no tflite or onnx wheels, so the classifier is a small depthwise-separable cnn that runs in plain numpy from a single `.npz` file (`firmware/smartbin/nn.py`). it is trained by distillation: a mobilenetv3large teacher trained on about 39k labelled crops teaches a student that takes 128 px input.
 
 ```
-python build_manifest.py     scan session folders -> manifest.csv
-python train.py              train on the session split
-python evaluate.py           honest vs naive accuracy, confusion, recycle precision
-python export.py             int8 tflite for the pi
+python ml/cache.py --manifest <manifest.csv> --root <dataset root>   decode crops once at 224 px
+python ml/distill.py --teacher <teacher.weights.h5>                  train the student, write firmware/models/smartbin.npz
+```
+
+results on the held-out splits (accuracy):
+
+| split | teacher (mobilenetv3large) | student (this repo) |
+|---|---|---|
+| val | 92.2% | 67.9% |
+| test, same sources | 91.5% | 65.3% |
+| external test, new sources | 65.4% | 50.8% |
+
+the student is 241k parameters at 128 px, about 0.9 mb, and runs in 6 to 23 ms per image in numpy on a laptop (`ml/verify_export.py`). i have not timed it on the zero w yet. it is a lot weaker than the teacher, so the weight fusion and the low-confidence-goes-to-trash rule do real work. a longer run or a wider student would close some of the gap.
+
+## running it on the pi
+
+install the python packages from apt, because a zero w has no wheels for them:
+
+```
+sudo apt install git python3-venv python3-numpy python3-pil python3-yaml python3-lgpio \
+  python3-picamera2 python3-fastapi python3-uvicorn python3-pydantic python3-pydantic-core
+git clone https://github.com/DagaVedant/SmartBin.git ~/SmartBin
+python3 -m venv --system-site-packages ~/SmartBin/.venv
+```
+
+the servo uses the pi's hardware pwm, so add this to `/boot/firmware/config.txt` and reboot:
+
+```
+dtoverlay=pwm,pin=12,func=4
+```
+
+then calibrate, once each. the servo needs root because `/sys/class/pwm` is root-only.
+
+```
+cd ~/SmartBin/firmware
+sudo ~/SmartBin/.venv/bin/python -m smartbin.calibrate servo
+~/SmartBin/.venv/bin/python -m smartbin.calibrate scale --grams 47
+```
+
+the scale step asks you to empty the pan, then place a known mass (47 g here) on it, and stores the result in `firmware/config/scale_cal.json`.
+
+run it:
+
+```
+sudo ~/SmartBin/.venv/bin/python -m smartbin
+```
+
+or install it as a service:
+
+```
+sudo cp ~/SmartBin/firmware/smartbin.service /etc/systemd/system/
+sudo systemctl enable --now smartbin
+```
+
+set `hardware: fake` in `firmware/config/device.yaml` to run the whole pipeline on a laptop with fake hardware, and `python -m pytest firmware/tests` to run the tests.
+
+## repo layout
+
+```
+CAD/        cadquery sources and step/stl files
+PCB/        kicad project, schematic pdf, gerbers.zip
+firmware/   the smartbin package, config, model, tests, systemd unit
+ml/         distillation pipeline
+BOM.csv     parts list
+images/     photos and renders
 ```
