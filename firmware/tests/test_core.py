@@ -48,7 +48,7 @@ def test_low_confidence_goes_to_trash(jurisdiction):
 
 def test_fuse_weight_demotes_implausible():
     probs = np.full(len(CLASS_ORDER), 1 / len(CLASS_ORDER))
-    fused = fuse_weight(probs, 900.0)  # too heavy for a cardboard item
+    fused = fuse_weight(probs, 900.0)
     assert fused[CLASS_ORDER.index(WasteClass.CARDBOARD_PAPER)] < probs[0]
     assert fused.sum() == pytest.approx(1.0)
 

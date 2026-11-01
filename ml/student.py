@@ -1,10 +1,3 @@
-"""Small depthwise-separable CNN that the Pi runs in plain NumPy.
-
-Only ops the NumPy runtime in firmware/smartbin/nn.py implements: 3x3 conv,
-depthwise 3x3, 1x1 conv, ReLU, global average pool, dense. BatchNorm is folded
-into the preceding conv at export time.
-"""
-
 from __future__ import annotations
 
 import json
@@ -21,7 +14,6 @@ INPUT_SIZE = 128
 MEAN = [0.485, 0.456, 0.406]
 STD = [0.229, 0.224, 0.225]
 
-# (output channels, stride of the depthwise conv) before the width multiplier
 BLOCKS = [(32, 2), (64, 1), (96, 2), (96, 1), (160, 2), (160, 1), (256, 1)]
 STEM = 24
 

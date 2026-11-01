@@ -1,10 +1,3 @@
-"""Plain NumPy inference for the small student network.
-
-The Pi Zero W (ARMv6) has no wheels for tflite or onnxruntime, so the trained
-network is exported by ml/export.py as an .npz of folded conv weights and run
-here with nothing but NumPy.
-"""
-
 from __future__ import annotations
 
 import json
@@ -16,7 +9,7 @@ import numpy as np
 
 @dataclass(frozen=True)
 class Layer:
-    kind: str  # "conv" | "dw" | "fc"
+    kind: str
     weight: np.ndarray
     bias: np.ndarray
     stride: int = 1
@@ -58,13 +51,11 @@ def load_network(path: Path) -> Network:
 
 
 def preprocess(network: Network, image: np.ndarray) -> np.ndarray:
-    """uint8 HxWx3 RGB already resized to the network input -> normalised float32."""
     x = image.astype(np.float32) / 255.0
     return (x - network.mean) / network.std
 
 
 def forward(network: Network, x: np.ndarray) -> np.ndarray:
-    """x: HxWx3 normalised float32. Returns softmax probabilities."""
     for layer in network.layers:
         if layer.kind == "conv":
             x = _conv(x, layer)

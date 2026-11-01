@@ -4,7 +4,7 @@ from typing import Protocol
 
 import numpy as np
 
-Frame = np.ndarray  # HxWx3 uint8, RGB
+Frame = np.ndarray
 
 
 class Trigger(Protocol):

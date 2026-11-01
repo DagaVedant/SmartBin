@@ -67,7 +67,7 @@ class SortPipeline:
             decision.waste_class is WasteClass.NO_OBJECT
             and confidence >= self.jurisdiction.confidence_threshold
         ):
-            mech_ok = True  # nothing on the pan: a false trigger, leave it level
+            mech_ok = True
         else:
             mech_ok = self._actuate(decision.bin)
         if mech_ok:

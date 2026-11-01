@@ -1,4 +1,3 @@
-# Set hardware to "fake" to run the whole pipeline on a laptop.
 hardware: real
 jurisdiction: jurisdiction.yaml
 model: ../models/smartbin.npz
@@ -6,7 +5,7 @@ model: ../models/smartbin.npz
 pins:
   load_cell_data: 5
   load_cell_clock: 6
-  servo: 12          # fixed by dtoverlay=pwm,pin=12,func=4
+  servo: 12
 
 pan:
   tilt_angle_deg: 30
@@ -18,7 +17,6 @@ trigger:
   threshold_g: 8
   settle_tolerance_g: 2
 
-# written by `python3 -m smartbin.calibrate servo|scale`
 calibration:
   servo: servo_cal.json
   scale: scale_cal.json

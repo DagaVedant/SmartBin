@@ -1,5 +1,5 @@
 jurisdiction: default
-confidence_threshold: 0.5   # below this, anything goes to trash
+confidence_threshold: 0.5
 
 mapping:
   rigid_plastic: recycle
@@ -8,4 +8,4 @@ mapping:
   cardboard_paper: recycle
   soft_plastic_foam: trash
   ewaste_hazard: trash
-  no_object: trash          # never tilts when the model is confident nothing is there
+  no_object: trash

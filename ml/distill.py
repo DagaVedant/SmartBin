@@ -1,12 +1,3 @@
-"""Distill the DumpGuard MobileNetV3Large teacher into the small NumPy-runnable student.
-
-    python ml/distill.py --teacher <DumpGuard>/.../out/run3/best.weights.h5 \
-        --cache ml/cache --out firmware/models/smartbin.npz
-
-Augmentation runs on the GPU. Teacher and student see the same augmented view:
-the teacher at 224 px, the student an antialiased 128 px downscale of it.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -42,8 +33,6 @@ def load_teacher(weights: Path):
 
 @torch.no_grad()
 def teacher_probs(teacher, nchw: torch.Tensor) -> torch.Tensor:
-    """nchw: float 0..255. The keras model wants NHWC."""
-    # keras holds every intermediate until the forward finishes (~12 GB at batch 256), so chunk it
     outs = []
     with torch.autocast("cuda", dtype=torch.bfloat16):
         for chunk in nchw.split(64):
@@ -52,7 +41,6 @@ def teacher_probs(teacher, nchw: torch.Tensor) -> torch.Tensor:
 
 
 def augment(x: torch.Tensor) -> torch.Tensor:
-    """x: uint8 NHWC on GPU -> float NCHW 0..255 at the same size."""
     b = x.shape[0]
     x = x.permute(0, 3, 1, 2).float()
 
@@ -131,14 +119,12 @@ def main() -> None:
     args = parser.parse_args()
 
     torch.manual_seed(0)
-    # stay under the card's dedicated memory: past it Windows spills into system RAM and steps get 3x slower
     torch.cuda.set_per_process_memory_fraction(0.92)
     cache = args.cache
     load = lambda name: torch.from_numpy(np.load(cache / name, mmap_mode="r")[:])
     xtr, ytr = load("train_x.npy"), torch.from_numpy(np.load(cache / "train_y.npy"))
     if args.limit:
         xtr, ytr = xtr[: args.limit], ytr[: args.limit]
-    # the train set (5 GB) stays in system RAM: on a 16 GB card it spills into shared memory and crawls
     xtr = xtr.pin_memory()
     ytr = ytr.to(DEVICE)
     splits = {

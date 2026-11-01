@@ -1,9 +1,3 @@
-"""Interactive calibration. Run on the Pi:
-
-    sudo python3 -m smartbin.calibrate servo
-    python3 -m smartbin.calibrate scale --grams 47
-"""
-
 from __future__ import annotations
 
 import argparse

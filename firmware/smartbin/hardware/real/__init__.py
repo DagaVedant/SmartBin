@@ -30,7 +30,6 @@ class PiCamera3:
         time.sleep(1.5)
 
     def capture(self) -> Frame:
-        # picamera2 "RGB888" is BGR in memory; the classifier expects RGB
         return np.ascontiguousarray(self._camera.capture_array()[..., 2::-1])
 
     def close(self) -> None:
@@ -39,7 +38,6 @@ class PiCamera3:
 
 
 class LoadCellHX711:
-    """HX711 read with lgpio. gpiozero is too slow to keep the clock high under 60 us."""
 
     MAX_COUNT = 0x7FFFFF
 
@@ -77,7 +75,6 @@ class LoadCellHX711:
         self._calibration.offset = self.read_counts()
 
     def read_counts(self) -> float:
-        """Median of several raw samples; a sample is dropped if the clock glitched."""
         readings = []
         for _ in range(self._samples * 2):
             value = self._read_raw()
@@ -104,12 +101,12 @@ class LoadCellHX711:
             value = (value << 1) | lgpio.gpio_read(chip, self._data)
             lgpio.gpio_write(chip, self._clock, 0)
 
-        lgpio.gpio_write(chip, self._clock, 1)  # 25th pulse: channel A, gain 128
+        lgpio.gpio_write(chip, self._clock, 1)
         lgpio.gpio_write(chip, self._clock, 0)
 
         if value & 0x800000:
             value -= 0x1000000
-        if value in (-1, 0x7FFFFF, -0x800000):  # all ones or rails: bad read
+        if value in (-1, 0x7FFFFF, -0x800000):
             return None
         return value
 
@@ -118,11 +115,6 @@ class LoadCellHX711:
 
 
 class HardwareServo:
-    """MG90S driven by the Pi's hardware PWM through sysfs, so there is no software jitter.
-
-    Needs `dtoverlay=pwm,pin=12,func=4` in /boot/firmware/config.txt (GPIO12 is
-    PWM0 channel 0) and root, because /sys/class/pwm is root-only.
-    """
 
     PERIOD_NS = 20_000_000
     MIN_US = 600.0
@@ -183,7 +175,6 @@ class HardwareServo:
         self.set_pulse_us(self.angle_to_us(degrees))
 
     def move_to(self, degrees: float, duration_s: float | None = None) -> None:
-        """Ease to the target in small steps instead of jumping, which jerks the pan."""
         duration = self._sweep_s if duration_s is None else duration_s
         start, end = self._current_us, self.angle_to_us(degrees)
         steps = max(int(duration / 0.02), 1)

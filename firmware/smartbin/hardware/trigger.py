@@ -6,7 +6,6 @@ from . import LoadCell
 
 
 class WeightTrigger:
-    """Fires when something lands on the pan and the reading has settled."""
 
     def __init__(
         self,

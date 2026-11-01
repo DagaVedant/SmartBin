@@ -21,8 +21,6 @@ CLASS_ORDER: tuple[WasteClass, ...] = (
     WasteClass.NO_OBJECT,
 )
 
-# Rough mass range for a single item of each class. A reading outside the range
-# does not veto the class, it just makes it less likely.
 PLAUSIBLE_GRAMS: dict[WasteClass, tuple[float, float]] = {
     WasteClass.RIGID_PLASTIC: (5.0, 700.0),
     WasteClass.SOFT_PLASTIC_FOAM: (1.0, 300.0),
@@ -80,7 +78,6 @@ class NumpyClassifier:
 
 
 def prepare_frame(frame: Frame, size: int) -> np.ndarray:
-    """Centre-crop to a square and resize, matching the square crops used in training."""
     from PIL import Image
 
     height, width = frame.shape[:2]

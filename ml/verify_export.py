@@ -1,11 +1,3 @@
-"""Check the exported .npz with the same NumPy code the Pi runs.
-
-    python ml/verify_export.py --model firmware/models/smartbin.npz --cache ml/cache
-
-Images are downscaled with PIL (as on the Pi) and run through smartbin.nn, so the
-accuracy printed here is the number the device will actually get.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -17,7 +9,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "firmware"))
-from smartbin.nn import forward, load_network, preprocess  # noqa: E402
+from smartbin.nn import forward, load_network, preprocess
 
 
 def main() -> None:

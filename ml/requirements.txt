@@ -1,4 +1,3 @@
-# training machine only, not the Pi
 torch
 keras
 numpy

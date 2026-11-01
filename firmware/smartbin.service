@@ -4,7 +4,6 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-# Root is needed for /sys/class/pwm (hardware PWM servo)
 User=root
 WorkingDirectory=/home/vedant/SmartBin/firmware
 ExecStart=/home/vedant/SmartBin/.venv/bin/python -m smartbin

@@ -1,11 +1,3 @@
-"""Decode the DumpGuard crops once into uint8 arrays at 224 px.
-
-    python ml/cache.py --manifest <DumpGuard>/ml-waste-categorizer-model/data/manifest.csv \
-        --root <DumpGuard>/ml-waste-categorizer-model --out ml/cache
-
-Writes <split>_x.npy (N,224,224,3 uint8) and <split>_y.npy (N,) per split.
-"""
-
 from __future__ import annotations
 
 import argparse
