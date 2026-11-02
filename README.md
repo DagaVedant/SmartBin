@@ -94,22 +94,23 @@ all cad is in `CAD/`. `smartbin-head.step` is the full assembly; the parts below
 
 ## the classifier
 
-the pi zero w has no tflite or onnx wheels, so the classifier is a small depthwise-separable cnn that runs in plain numpy from a single `.npz` file (`firmware/smartbin/nn.py`). it is trained by distillation: a mobilenetv3large teacher trained on about 39k labelled crops teaches a student that takes 128 px input.
+the pi zero w has no tflite or onnx wheels, so the classifier runs in plain numpy from a single `.npz` file (`firmware/smartbin/nn.py` and `firmware/smartbin/graphnet.py`). accuracy matters more than speed here, so the model on the bin is the mobilenetv3large itself at 224 px, with batch norm folded into the convolutions and the weights stored as fp16. the numpy version gives the same answers as keras, within 0.011 in probability.
 
 ```
 python ml/cache.py --manifest <manifest.csv> --root <dataset root>   decode crops once at 224 px
-python ml/distill.py --teacher <teacher.weights.h5>                  train the student, write firmware/models/smartbin.npz
+python ml/export_teacher.py --teacher <teacher.weights.h5>           write firmware/models/smartbin-teacher.npz
+python ml/distill.py --teacher <teacher.weights.h5>                  optional, train the small student instead
 ```
 
-results on the held-out splits (accuracy):
+results on the held-out splits (accuracy, numpy, `ml/verify_export.py`):
 
-| split | teacher (mobilenetv3large) | student (this repo) |
+| split | mobilenetv3large (on the bin) | small student |
 |---|---|---|
-| val | 92.2% | 71.3% |
-| test, same sources | 91.5% | 69.4% |
-| external test, new sources | 65.4% | 51.9% |
+| val | 91.8% | 71.3% |
+| test, same sources | 91.8% | 69.4% |
+| external test, new sources | 68.0% | 51.9% |
 
-the student is 420k parameters at 128 px, about 1.5 mb, and runs in 7 to 12 ms per image in numpy on a laptop (`ml/verify_export.py`). i have not timed it on the zero w yet. it is a lot weaker than the teacher, so the weight fusion and the low-confidence-goes-to-trash rule do real work. training it longer or making it wider closed some of the gap, but not all of it.
+the teacher is 3.0m parameters and about 5.6 mb. it takes 40 to 100 ms per image in numpy on a laptop. i have not timed it on the zero w yet, and i expect it to be a few seconds per image there. the small student (420k parameters, 128 px, 1.5 mb) is still in `firmware/models/smartbin.npz` and can be selected in `firmware/config/device.yaml` if the teacher is too slow. these numbers come from 400 random images per split, so they are a little noisy.
 
 ## running it on the pi
 
