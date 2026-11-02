@@ -1,6 +1,6 @@
 hardware: real
 jurisdiction: jurisdiction.yaml
-model: ../models/smartbin-pruned.npz
+model: ../models/smartbin-fast.npz
 
 pins:
   load_cell_data: 5
