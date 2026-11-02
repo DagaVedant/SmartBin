@@ -6,8 +6,6 @@ a sorting head that drops into a normal trash can and puts recyclables in the ri
 
 demo video: https://www.youtube.com/shorts/8E3T3RMJy3o
 
-demo video: https://www.youtube.com/shorts/8E3T3RMJy3o
-
 ![the pan on its mount, holding an item](images/build-pan.png)
 
 ![pi zero w, hat, camera and servo](images/build-electronics.png)
