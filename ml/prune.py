@@ -190,12 +190,18 @@ def count_macs(ops, size=224):
     return macs
 
 
+def resize(x, size):
+    if x.shape[-1] == size:
+        return x
+    return F.interpolate(x, size=(size, size), mode="bilinear", antialias=True, align_corners=False)
+
+
 @torch.no_grad()
-def evaluate(model, x, y, batch=128):
+def evaluate(model, x, y, batch=128, size=224):
     model.eval()
     hits = 0
     for i in range(0, len(x), batch):
-        xb = x[i : i + batch].to(DEVICE).permute(0, 3, 1, 2).float()
+        xb = resize(x[i : i + batch].to(DEVICE).permute(0, 3, 1, 2).float(), size)
         with torch.autocast("cuda", dtype=torch.bfloat16):
             logits = model(xb)
         hits += (logits.argmax(1).cpu() == y[i : i + batch]).sum().item()
@@ -213,6 +219,7 @@ def main() -> None:
     parser.add_argument("--lr", type=float, default=3e-4)
     parser.add_argument("--temperature", type=float, default=2.0)
     parser.add_argument("--alpha", type=float, default=0.7)
+    parser.add_argument("--size", type=int, default=224)
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--version", default="smartbin-pruned-1")
     args = parser.parse_args()
@@ -221,7 +228,7 @@ def main() -> None:
     torch.cuda.set_per_process_memory_fraction(0.92)
     base_ops, network = load_ops(args.model)
     pruned_ops = prune_blocks(base_ops, args.ratio)
-    full, small = count_macs(base_ops), count_macs(pruned_ops)
+    full, small = count_macs(base_ops), count_macs(pruned_ops, args.size)
     print(f"macs {full / 1e6:.0f}M -> {small / 1e6:.0f}M ({small / full:.2f}x)", flush=True)
 
     teacher = GraphModule(base_ops).to(DEVICE).eval()
@@ -240,7 +247,7 @@ def main() -> None:
         for name in ("val", "test_id", "ext_test")
     }
 
-    print(f"pruned before fine-tune: val {evaluate(student, *splits['val']):.4f}", flush=True)
+    print(f"pruned before fine-tune: val {evaluate(student, *splits['val'], size=args.size):.4f}", flush=True)
 
     optimizer = torch.optim.AdamW(student.parameters(), lr=args.lr, weight_decay=1e-2)
     steps = len(xtr) // args.batch
@@ -259,7 +266,7 @@ def main() -> None:
             with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
                 target = F.softmax(teacher(xb).float() / args.temperature, dim=1)
             with torch.autocast("cuda", dtype=torch.bfloat16):
-                logits = student(xb).float()
+                logits = student(resize(xb, args.size)).float()
             distill = F.kl_div(
                 F.log_softmax(logits / args.temperature, dim=1), target, reduction="batchmean"
             ) * args.temperature**2
@@ -272,7 +279,7 @@ def main() -> None:
             running += loss.item()
             if step % 40 == 0:
                 print(f"  step {step}/{steps} {time.time() - start:.0f}s", flush=True)
-        val = evaluate(student, *splits["val"])
+        val = evaluate(student, *splits["val"], size=args.size)
         torch.cuda.empty_cache()
         if val > best:
             best = val
@@ -281,10 +288,10 @@ def main() -> None:
 
     student.load_state_dict(best_state)
     for name, (x, y) in splits.items():
-        print(f"FINAL {name}: {evaluate(student, x, y):.4f}", flush=True)
+        print(f"FINAL {name}: {evaluate(student, x, y, size=args.size):.4f}", flush=True)
 
     meta = {"classes": list(network.classes), "version": args.version}
-    arrays = pack(meta, student.to_ops(pruned_ops), network.input_size)
+    arrays = pack(meta, student.to_ops(pruned_ops), args.size)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(args.out, **arrays)
     print(f"wrote {args.out}: {args.out.stat().st_size / 1e6:.1f} MB")
