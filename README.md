@@ -94,23 +94,26 @@ all cad is in `CAD/`. `smartbin-head.step` is the full assembly; the parts below
 
 ## the classifier
 
-the pi zero w has no tflite or onnx wheels, so the classifier runs in plain numpy from a single `.npz` file (`firmware/smartbin/nn.py` and `firmware/smartbin/graphnet.py`). accuracy matters more than speed here, so the model on the bin is the mobilenetv3large itself at 224 px, with batch norm folded into the convolutions and the weights stored as fp16. the numpy version gives the same answers as keras, within 0.011 in probability.
+the pi zero w has no tflite or onnx wheels, so the classifier runs in plain numpy from a single `.npz` file (`firmware/smartbin/nn.py` and `firmware/smartbin/graphnet.py`). accuracy matters more than speed here, so the model is the mobilenetv3large at 224 px with batch norm folded into the convolutions and the weights stored as fp16. the numpy version gives the same answers as keras, within 0.011 in probability.
+
+to make it faster, i removed half of the hidden channels in each block, the ones with the smallest weights, and then trained it for 8 more epochs against the full model (`ml/prune.py`). that cuts the compute from 214m to 147m multiply-adds.
 
 ```
 python ml/cache.py --manifest <manifest.csv> --root <dataset root>   decode crops once at 224 px
 python ml/export_teacher.py --teacher <teacher.weights.h5>           write firmware/models/smartbin-teacher.npz
+python ml/prune.py                                                   write firmware/models/smartbin-pruned.npz
 python ml/distill.py --teacher <teacher.weights.h5>                  optional, train the small student instead
 ```
 
-results on the held-out splits (accuracy, numpy, `ml/verify_export.py`):
+results on the held-out splits (accuracy):
 
-| split | mobilenetv3large (on the bin) | small student |
-|---|---|---|
-| val | 91.8% | 71.3% |
-| test, same sources | 91.8% | 69.4% |
-| external test, new sources | 68.0% | 51.9% |
+| split | full mobilenetv3large | pruned (on the bin) | small student |
+|---|---|---|---|
+| val | 92.2% | 85.9% | 71.3% |
+| test, same sources | 91.5% | 84.0% | 69.4% |
+| external test, new sources | 65.4% | 62.8% | 51.9% |
 
-the teacher is 3.0m parameters and about 5.6 mb. it takes 40 to 100 ms per image in numpy on a laptop. i have not timed it on the zero w yet, and i expect it to be a few seconds per image there. the small student (420k parameters, 128 px, 1.5 mb) is still in `firmware/models/smartbin.npz` and can be selected in `firmware/config/device.yaml` if the teacher is too slow. these numbers come from 400 random images per split, so they are a little noisy.
+the pruned model is 3.4 mb and takes about 30 ms per image in numpy on a laptop. i have not timed it on the zero w yet, and i expect a few seconds per image there. pruning more, or training it for longer, would change these numbers, and i only tried one setting. the full model is still in `firmware/models/smartbin-teacher.npz` and the small student is in `firmware/models/smartbin.npz`. both can be selected in `firmware/config/device.yaml`.
 
 ## running it on the pi
 
