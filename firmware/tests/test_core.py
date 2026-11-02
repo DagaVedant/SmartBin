@@ -6,10 +6,10 @@ import pytest
 
 from smartbin import nn
 from smartbin.classes import Bin, WasteClass
-from smartbin.classifier import CLASS_ORDER, FakeClassifier, NumpyClassifier, fuse_weight
+from smartbin.classifier import CLASS_ORDER, NumpyClassifier, fuse_weight
 from smartbin.config import ConfigError, PanSettings, load_device_config, load_jurisdiction
 from smartbin.gate import decide
-from smartbin.hardware.fake import FakeCamera, FakeLoadCell, FakePan, FakeTrigger
+from doubles import StubCamera, StubClassifier, StubLoadCell, StubPan, StubTrigger
 from smartbin.hardware.trigger import WeightTrigger
 from smartbin.pipeline import SortPipeline
 from smartbin.storage import EventStore
@@ -96,22 +96,22 @@ def test_numpy_classifier_runs(tmp_path):
 
 
 def test_weight_trigger_waits_for_settle():
-    cell = FakeLoadCell(weights=[0, 0, 30, 60, 61, 61, 61])
+    cell = StubLoadCell(weights=[0, 0, 30, 60, 61, 61, 61])
     trigger = WeightTrigger(cell, threshold_g=8, poll_s=0)
     assert trigger.wait_for_item(timeout=2)
     assert trigger.last_weight_g == pytest.approx(61)
-    cell2 = FakeLoadCell()
+    cell2 = StubLoadCell()
     assert not WeightTrigger(cell2, poll_s=0).wait_for_item(timeout=0.05)
 
 
 def _pipeline(tmp_path, jurisdiction, predictions, jam=False):
-    cell = FakeLoadCell(resting=0.0)
-    pan = FakePan(load_cell=cell, jam=jam)
+    cell = StubLoadCell(resting=0.0)
+    pan = StubPan(load_cell=cell, jam=jam)
     store = EventStore(tmp_path / "e.db")
-    trigger = FakeTrigger(triggers=1)
+    trigger = StubTrigger(triggers=1)
     pipeline = SortPipeline(
-        trigger=trigger, camera=FakeCamera(), load_cell=cell, pan=pan,
-        classifier=FakeClassifier(predictions), jurisdiction=jurisdiction, store=store,
+        trigger=trigger, camera=StubCamera(), load_cell=cell, pan=pan,
+        classifier=StubClassifier(predictions), jurisdiction=jurisdiction, store=store,
         settings=PanSettings(settle_s=0.0, jam_retries=1),
     )
     return pipeline, pan, trigger, cell

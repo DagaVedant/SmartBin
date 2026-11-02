@@ -38,7 +38,6 @@ class TriggerSettings:
 
 @dataclass(frozen=True)
 class DeviceConfig:
-    hardware: str
     jurisdiction_path: Path
     model_path: Path
     database_path: Path
@@ -50,10 +49,6 @@ class DeviceConfig:
     pins: dict[str, int]
     servo_calibration_path: Path
     scale_calibration_path: Path
-
-    @property
-    def uses_real_hardware(self) -> bool:
-        return self.hardware == "real"
 
 
 def load_jurisdiction(path: Path) -> Jurisdiction:
@@ -94,10 +89,6 @@ def load_device_config(path: Path) -> DeviceConfig:
     raw = _read_yaml(path)
     root = path.parent
 
-    hardware = raw.get("hardware", "fake")
-    if hardware not in ("fake", "real"):
-        raise ConfigError(f"{path}: 'hardware' must be 'fake' or 'real'")
-
     storage = raw.get("storage") or {}
     api = raw.get("api") or {}
     pan = raw.get("pan") or {}
@@ -105,7 +96,6 @@ def load_device_config(path: Path) -> DeviceConfig:
     calibration = raw.get("calibration") or {}
 
     return DeviceConfig(
-        hardware=hardware,
         jurisdiction_path=_resolve(root, raw, "jurisdiction", path),
         model_path=_resolve(root, raw, "model", path),
         database_path=root / storage.get("database", "data/events.db"),

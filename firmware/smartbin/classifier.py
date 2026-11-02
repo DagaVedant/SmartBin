@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections import deque
-from collections.abc import Sequence
 from pathlib import Path
 from typing import Protocol
 
@@ -38,23 +36,6 @@ class Classifier(Protocol):
     version: str
 
     def predict(self, frame: Frame, weight_g: float | None = None) -> tuple[WasteClass, float]: ...
-
-
-class FakeClassifier:
-    def __init__(
-        self,
-        predictions: Sequence[tuple[WasteClass, float]] = (),
-        default: tuple[WasteClass, float] = (WasteClass.NO_OBJECT, 0.0),
-        version: str = "fake",
-    ) -> None:
-        self.predictions = deque(predictions)
-        self.default = default
-        self.version = version
-
-    def predict(self, frame: Frame, weight_g: float | None = None) -> tuple[WasteClass, float]:
-        if self.predictions:
-            return self.predictions.popleft()
-        return self.default
 
 
 class NumpyClassifier:

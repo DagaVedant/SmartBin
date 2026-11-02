@@ -1,4 +1,3 @@
-hardware: real
 jurisdiction: jurisdiction.yaml
 model: ../models/smartbin-fast.npz
 
