@@ -21,7 +21,7 @@ def main() -> None:
 
     network = load_network(args.model)
     size = network.input_size
-    print(f"model {network.version}, {len(network.layers)} layers, input {size}px")
+    print(f"model {network.version}, {len(getattr(network, "layers", None) or network.ops)} layers, input {size}px")
 
     for split in ("val", "test_id", "ext_test"):
         x = np.load(args.cache / f"{split}_x.npy", mmap_mode="r")

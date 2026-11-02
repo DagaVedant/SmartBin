@@ -6,6 +6,8 @@ from pathlib import Path
 
 import numpy as np
 
+from . import graphnet
+
 
 @dataclass(frozen=True)
 class Layer:
@@ -26,9 +28,35 @@ class Network:
     version: str
 
 
-def load_network(path: Path) -> Network:
+@dataclass(frozen=True)
+class GraphNetwork:
+    classes: tuple[str, ...]
+    input_size: int
+    ops: tuple[dict, ...]
+    version: str
+
+
+def _load_graph(data, meta: dict, path: Path) -> GraphNetwork:
+    ops = []
+    for index, spec in enumerate(meta["ops"]):
+        op = dict(spec)
+        if f"w{index}" in data:
+            op["w"] = data[f"w{index}"].astype(np.float32)
+            op["b"] = data[f"b{index}"].astype(np.float32)
+        ops.append(op)
+    return GraphNetwork(
+        classes=tuple(meta["classes"]),
+        input_size=int(meta["input_size"]),
+        ops=tuple(ops),
+        version=str(meta.get("version", path.stem)),
+    )
+
+
+def load_network(path: Path) -> Network | GraphNetwork:
     data = np.load(path, allow_pickle=False)
     meta = json.loads(str(data["meta"]))
+    if meta.get("format") == "graph":
+        return _load_graph(data, meta, path)
     layers = []
     for index, spec in enumerate(meta["layers"]):
         layers.append(
@@ -50,12 +78,16 @@ def load_network(path: Path) -> Network:
     )
 
 
-def preprocess(network: Network, image: np.ndarray) -> np.ndarray:
+def preprocess(network: Network | GraphNetwork, image: np.ndarray) -> np.ndarray:
+    if isinstance(network, GraphNetwork):
+        return image.astype(np.float32)
     x = image.astype(np.float32) / 255.0
     return (x - network.mean) / network.std
 
 
-def forward(network: Network, x: np.ndarray) -> np.ndarray:
+def forward(network: Network | GraphNetwork, x: np.ndarray) -> np.ndarray:
+    if isinstance(network, GraphNetwork):
+        return graphnet.run(network.ops, x)
     for layer in network.layers:
         if layer.kind == "conv":
             x = _conv(x, layer)
