@@ -78,18 +78,6 @@ source files are in `PCB/`: `.kicad_pro`, `.kicad_sch`, `.kicad_pcb`, `schematic
 
 ![assembly](images/assembly.png)
 
-all cad is in `CAD/`. `smartbin-head.step` is the full assembly; the parts below are the editable cadquery sources, each with `.py`, `.step` and `.stl`.
-
-| part | job |
-|---|---|
-| `pan` | the tilting tray the item lands on |
-| `pan-hub` | driven side, clamps onto the servo horn |
-| `servo-mount` | flat plate the mg90s pushes through, shaft on the pivot axis |
-| `bearing-block` | carries the 608zz on the idler side |
-| `print-plate` | the mount, hub and block laid out for one print |
-
-`base-plate`, `pan-idler` and `pi-mount` are step-only. `bearing-fit-test` and `bearing-608*` are for checking the bearing fit.
-
 ## the classifier
 
 the pi zero w has no tflite or onnx wheels, so the classifier runs in plain numpy from a single `.npz` file (`firmware/smartbin/nn.py` and `firmware/smartbin/graphnet.py`). accuracy matters more than speed here, so the model is the mobilenetv3large at 224 px with batch norm folded into the convolutions and the weights stored as fp16. the numpy version gives the same answers as keras, within 0.011 in probability.
@@ -151,17 +139,4 @@ or install it as a service:
 ```
 sudo cp ~/SmartBin/firmware/smartbin.service /etc/systemd/system/
 sudo systemctl enable --now smartbin
-```
-
-set `hardware: fake` in `firmware/config/device.yaml` to run the whole pipeline on a laptop with fake hardware, and `python -m pytest firmware/tests` to run the tests.
-
-## repo layout
-
-```
-CAD/        cadquery sources and step/stl files
-PCB/        kicad project, schematic pdf, gerbers.zip
-firmware/   the smartbin package, config, model, tests, systemd unit
-ml/         distillation pipeline
-BOM.csv     parts list
-images/     photos and renders
 ```
